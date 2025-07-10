@@ -1,0 +1,43 @@
+{
+  "name": "ts-interface-core",
+  "version": "0.1.0",
+  "description": "Mark and detect interface conformance with instanceof.",
+  "author": "Alexander Lonberg <alexlonberg@gmail.com>",
+  "homepage": "https://github.com/AlexLonberg/ts-interface-core",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AlexLonberg/ts-interface-core.git"
+  },
+  "license": "MIT",
+  "keywords": [
+    "typescript",
+    "interface",
+    "implements",
+    "instanceof"
+  ],
+  "scripts": {
+    "test": "vitest run --coverage --config vitest.config.ts",
+    "bench": "vitest bench --config vitest.config.ts",
+    "predist": "node ./scripts/dist.js",
+    "dist": "tsc --project tsconfig.dist.json"
+  },
+  "type": "module",
+  "devDependencies": {
+    "@eslint/js": "^9.30.1",
+    "@stylistic/eslint-plugin": "^5.1.0",
+    "@types/eslint__js": "^8.42.3",
+    "@vitest/coverage-v8": "^3.2.4",
+    "eslint": "^9.30.1",
+    "nodejs-pkg-tools": "^0.5.0",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.36.0",
+    "vitest": "^3.2.4"
+  },
+  "private": true,
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts"
+    }
+  },
+  "main": "./src/index.js"
+}
