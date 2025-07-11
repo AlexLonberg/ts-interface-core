@@ -23,9 +23,6 @@ import {
 abstract class IFoo {
   abstract readonly name: string
 }
-abstract class IFoo {
-  abstract readonly name: string
-}
 // Помечаем интерфейсы основанные на абстрактных классах символами и изменяем Symbol.hasInstance
 interfaceDefineHasInstanceMarker(IFoo)
 

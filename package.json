@@ -1,6 +1,6 @@
 {
   "name": "ts-interface-core",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Mark and detect interface conformance with instanceof.",
   "author": "Alexander Lonberg <alexlonberg@gmail.com>",
   "homepage": "https://github.com/AlexLonberg/ts-interface-core",
