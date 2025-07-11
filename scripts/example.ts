@@ -35,7 +35,7 @@ class Impl extends IFoo implements IBar, IBaz {
   key = 123
   kind = 'impl'
 }
-// Симулиреум реализацию.
+// Симулируем реализацию.
 // Явно наследуемые классы `extends IFoo`, работают по умолчанию
 interfaceImplements(Impl, IBar, IBaz)
 
