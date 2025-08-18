@@ -2,10 +2,10 @@ import { test, expect } from 'vitest'
 import {
   INTERFACE_MARKER_PROPERTY,
   interfaceMarker,
-  interfaceDefineHasInstance,
   interfaceDefineHasInstanceMarker,
-  interfaceDefineImplementInterfaceMarker,
-  interfaceDefineImplementInterfaces,
+  interfaceDefineHasInstance,
+  interfaceImplementMarkers,
+  interfaceImplementInterfaces,
   interfaceImplements
 } from './index.js'
 
@@ -14,13 +14,13 @@ const FooLikeMarker = Symbol()
 abstract class FooLike {
   abstract readonly name: string
 }
-interfaceDefineHasInstance(FooLike, FooLikeMarker)
+interfaceDefineHasInstanceMarker(FooLike, FooLikeMarker)
 
 // Интерфейс с автоматической генерацией маркера
 abstract class BarLike {
   abstract readonly key: number
 }
-interfaceDefineHasInstanceMarker(BarLike)
+interfaceDefineHasInstance(BarLike)
 
 // Реализация интерфеса
 class SomeBase implements FooLike {
@@ -94,8 +94,8 @@ test('Слияние интерфейсов', () => {
     abstract readonly key: number
     abstract readonly kind: string
   }
-  // Одновременно наследуем и определяем новый интерфейс
-  interfaceDefineHasInstanceMarker(FooBarLike)
+  // Одновременно определяем новый интерфейс и наследуем
+  interfaceDefineHasInstance(FooBarLike)
   interfaceImplements(FooBarLike, BarLike)
 
   class Impl extends FooBarLike {
@@ -119,7 +119,7 @@ test('Определение дружелюбного объекта', () => {
   }
 
   // Реализация объекта
-  const ins: ILike = interfaceDefineImplementInterfaces({
+  const ins: ILike = interfaceImplementInterfaces({
     name: 'ILike',
     key: 123,
     kind: 'FooBar'
@@ -134,31 +134,55 @@ test('Ошибка двойного определения интерфейса'
   class Proto { }
 
   // Автоматически установим маркер интерфейса
-  interfaceDefineHasInstanceMarker(Proto)
+  interfaceDefineHasInstance(Proto)
 
   // Повторная попытка установить другой маркер вызовет исключение
-  expect(() => interfaceDefineHasInstance(Proto, marker)).toThrowError(Error)
+  expect(() => interfaceDefineHasInstanceMarker(Proto, marker)).toThrowError(Error)
 
   // Это не вызовет исключения, но и не установит новый маркер, который уже определен
   const real = interfaceMarker(Proto)!
-  interfaceDefineHasInstance(Proto, real)
+  interfaceDefineHasInstanceMarker(Proto, real)
   expect((Proto as any)[INTERFACE_MARKER_PROPERTY]).toBe(real)
 })
 
-test('Быстрая реализация малых структур', () => {
+test('Быстрая реализация простых объектов', () => {
   // Для часто создаваемых объектов реализующих интерфейс,
   // достаньте марке и используйте любой из методов определения свойства
-  const marker = interfaceMarker(FooLike)!
+  const marker1 = interfaceMarker(FooLike)!
+  const marker2 = interfaceMarker(BarLike)!
 
-  const insFoo: FooLike = interfaceDefineImplementInterfaceMarker({ name: '' }, marker)
+  const ins = interfaceImplementMarkers({ name: '', key: 0 }, marker1, marker2)
   const customFoo = Object.defineProperties({}, {
     // По умолчанию значение маркера null, но значение не играет роли и его можно использовать на свое усмотрение
-    [marker]: { value: 'Foo Like' },
+    [marker1]: { value: 'Foo Like' },
     name: { value: 'customFoo' }
   })
 
-  expect(insFoo instanceof FooLike).toBe(true)
+  expect(ins instanceof FooLike).toBe(true)
+  expect(ins instanceof BarLike).toBe(true)
   expect(customFoo instanceof FooLike).toBe(true)
+  expect(customFoo instanceof BarLike).not.toBe(true)
+})
+
+test('Детектирование класса-интерфейса', () => {
+  class Foo { }
+  class Bar implements Foo { }
+  interfaceDefineHasInstance(Foo)
+  interfaceImplements(Bar, Foo)
+
+  const foo = new Foo()
+  const bar = new Bar()
+  expect(foo instanceof Foo).toBe(true)
+  expect(bar instanceof Foo).toBe(true)
+
+  // Класс интерфейс установит значением в свойство-маркер - сам маркер.
+  // Наследники могут использовать это свойство {[marker(Symbol)]:any} на свое усмотрение(по умолчанию null).
+  const isFooInterface = (value: object) => {
+    const marker = interfaceMarker(Foo)!
+    return (value as any)[marker] === marker
+  }
+  expect(isFooInterface(foo)).toBe(true)
+  expect(isFooInterface(bar)).toBe(false)
 })
 
 test('Невалидные типы', () => {
@@ -170,6 +194,6 @@ test('Невалидные типы', () => {
 
   // Класс интерфейса обязательно должен маркировать себя перед использованием
   expect(interfaceMarker(Foo)).toBe(null)
-  expect(() => interfaceDefineImplementInterfaces({}, Foo)).toThrowError(Error)
+  expect(() => interfaceImplementInterfaces({}, Foo)).toThrowError(Error)
   expect(() => interfaceImplements(class Bar { }, Foo)).toThrowError(Error)
 })

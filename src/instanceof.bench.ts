@@ -1,5 +1,5 @@
 import { bench } from 'vitest'
-import { interfaceDefineHasInstanceMarker, interfaceImplements } from './index.js'
+import { interfaceDefineHasInstance, interfaceImplements } from './index.js'
 
 function defineHasInstance (set: WeakSet<Function>, cls: object) {
   if (!Object.getOwnPropertyDescriptor(cls, Symbol.hasInstance)) {
@@ -60,7 +60,7 @@ abstract class IFooSymbol {
     interfaceImplements(cls, IFooSymbol)
   }
 }
-interfaceDefineHasInstanceMarker(IFooSymbol)
+interfaceDefineHasInstance(IFooSymbol)
 
 abstract class IBarSymbol {
   abstract readonly key: number
@@ -69,7 +69,7 @@ abstract class IBarSymbol {
     interfaceImplements(cls, IBarSymbol)
   }
 }
-interfaceDefineHasInstanceMarker(IBarSymbol)
+interfaceDefineHasInstance(IBarSymbol)
 
 // impl
 
@@ -137,14 +137,14 @@ bench('symbol if', () => {
   if (ins instanceof CustomClassSymbol) { /**/ }
 })
 
-//  ✓ src/instanceof.bench.ts 8128ms
+//  ✓ src/instanceof.bench.ts 8131ms
 //      name                   hz     min     max    mean     p75     p99    p995    p999     rme  samples
-//    · native if   17,022,884.60  0.0000  0.3698  0.0001  0.0001  0.0001  0.0001  0.0003  ±0.36%  8511444
-//    · custom if   12,130,467.57  0.0000  0.4002  0.0001  0.0001  0.0002  0.0002  0.0003  ±0.30%  6065235
-//    · symbol if   13,792,917.24  0.0000  0.3300  0.0001  0.0001  0.0001  0.0002  0.0003  ±0.24%  6896460
+//    · native if   17,760,134.45  0.0000  0.2010  0.0001  0.0001  0.0002  0.0002  0.0004  ±0.24%  8880069
+//    · custom if   12,111,659.58  0.0000  0.4656  0.0001  0.0001  0.0002  0.0003  0.0004  ±0.28%  6055831
+//    · symbol if   16,497,972.00  0.0000  0.4827  0.0001  0.0001  0.0001  0.0002  0.0003  ±0.33%  8248986
 
 //  BENCH  Summary
 
 //   native if  - src/instanceof.bench.ts
-//     1.23x faster than symbol if
-//     1.40x faster than custom if
+//     1.08x faster than symbol if
+//     1.47x faster than custom if

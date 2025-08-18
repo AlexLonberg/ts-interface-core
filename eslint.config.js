@@ -23,7 +23,6 @@ export default tsEslint.config(
       parser: tsEslint.parser,
       parserOptions: {
         project: [
-          'tsconfig.dist.json',
           'tsconfig.project.json'
         ]
       }
@@ -50,20 +49,8 @@ export default tsEslint.config(
         caughtErrors: 'all',
         caughtErrorsIgnorePattern: '^_'
       }],
-      // // Не дает использовать type и предлагает явно interface
-      // '@typescript-eslint/consistent-type-definitions': 'off',
       // Требовать импорта типов как 'import {type Foo} from ...'
       '@typescript-eslint/consistent-type-imports': ['error', { prefer: 'type-imports', fixStyle: 'inline-type-imports' }],
-      // // Требует Record<A, B> или наоборот, вместо {[k: A]: B}
-      // '@typescript-eslint/consistent-indexed-object-style': 'off',
-      // // Не дает использовать в условных выражениях if( || )
-      // // '@typescript-eslint/prefer-nullish-coalescing': ['error', { ignoreConditionalTests: true }],
-      // // Не дает явно объявить тип параметра `once: boolean = false`, считая что это лишнее.
-      // '@typescript-eslint/no-inferrable-types': 'off',
-      // // Требует вместо for/i использовать for/of.
-      // '@typescript-eslint/prefer-for-of': 'off',
-      // // Не дает использовать геттеры в литеральных свойствах классов вроде `get [Symbol.toStringTag] () { return 'Foo' }`
-      // '@typescript-eslint/class-literal-property-style': 'off',
       //
       // ## Стиль ##
       //

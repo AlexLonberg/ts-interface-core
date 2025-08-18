@@ -2,21 +2,18 @@
   // DOC VSCode glob patterns https://code.visualstudio.com/docs/editor/glob-patterns
   "files.exclude": {
     "**/.git": true,
-    "**/node_modules": true,
-    // ".private": true,
-    // ".temp": true,
+    "**/node_modules": true
   },
   "search.exclude": {
-    "**/_*": true,
     "**/.git": true,
     "**/node_modules": true,
-    ".private/": true,
+    // ".private/": true,
     ".temp/": true,
     "dist/": true,
-    "**/*.json": true,
-    "eslint.config.js": true,
-    "vitest.config.ts": true,
-    "LICENSE.md": true,
+    // "**/*.json": true,
+    // "eslint.config.js": true,
+    // "vitest.config.ts": true,
+    // "LICENSE.md": true,
   },
   "googleSearchContextMenu.items": {
     "MDNWeb": {

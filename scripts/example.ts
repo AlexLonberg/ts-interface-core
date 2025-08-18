@@ -1,12 +1,13 @@
 import {
   // INTERFACE_MARKER_PROPERTY,
   // interfaceMarker,
-  // interfaceDefineHasInstance,
-  interfaceDefineHasInstanceMarker,
-  // interfaceDefineImplementInterfaceMarker,
-  // interfaceDefineImplementInterfaces,
+  // interfaceDefineHasInstanceMarker,
+  interfaceDefineHasInstance,
+  // interfaceImplementMarkers,
+  // interfaceImplementInterfaces,
   interfaceImplements
-} from '../src/index.js'
+  // } from '../src/index.js'
+} from '../dist/index.js'
 
 interface Console {
   log (..._: any[]): void
@@ -18,17 +19,17 @@ abstract class IFoo {
   abstract readonly name: string
 }
 // Помечаем интерфейсы основанные на абстрактных классах символами и изменяем Symbol.hasInstance
-interfaceDefineHasInstanceMarker(IFoo)
+interfaceDefineHasInstance(IFoo)
 
 abstract class IBar {
   abstract readonly key: number
 }
-interfaceDefineHasInstanceMarker(IBar)
+interfaceDefineHasInstance(IBar)
 
 abstract class IBaz {
   abstract readonly kind: string
 }
-interfaceDefineHasInstanceMarker(IBaz)
+interfaceDefineHasInstance(IBaz)
 
 class Impl extends IFoo implements IBar, IBaz {
   name = 'foo'
@@ -44,3 +45,5 @@ console.log(ins instanceof Impl) // true
 console.log(ins instanceof IFoo) // true
 console.log(ins instanceof IBar) // true
 console.log(ins instanceof IBaz) // true
+//
+console.log(new class { } instanceof IFoo) // false

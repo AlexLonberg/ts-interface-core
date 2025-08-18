@@ -9,13 +9,11 @@
       "ESNext"
     ],
     "module": "NodeNext",
-    // NOTE Если есть дополнительные файлы в рабочем каталоге, например scripts, меняем ./src на рабочую директорию.
     "rootDir": ".", // +
     "moduleResolution": "NodeNext",
     "types": [],
     "declaration": true,
     "declarationMap": false,
-    // NOTE На всякий случай, по факту проектные файлы не компилируются.
     "outDir": "./.temp/project", // +
     "removeComments": false,
     "noEmit": true, // +
@@ -40,13 +38,8 @@
   "typeAcquisition": {
     "disableFilenameBasedTypeAcquisition": true
   },
-  // TODO Включаем все файлы проекта или выбираем специфичные и тесты исключая целевые источники.
-  // При включении всех файлов, TS будет видеть типы в файлах библиотеки src, или файлы целевой библиотеки будут видеть
-  // типы проектных файлов - это не всегда требуемое поведение.
-  // Обработка пересекающихся файлов зависит от порядка tsconfig.json-references определения проектов.
   "include": [
     "src/**/*.ts",
-    "src/**/*.js",
     "scripts/**/*.ts",
     "scripts/**/*.js"
   ],

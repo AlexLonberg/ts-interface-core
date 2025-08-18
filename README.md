@@ -15,10 +15,10 @@
 import {
   INTERFACE_MARKER_PROPERTY,
   interfaceMarker,
-  interfaceDefineHasInstance,
   interfaceDefineHasInstanceMarker,
-  interfaceDefineImplementInterfaceMarker,
-  interfaceDefineImplementInterfaces,
+  interfaceDefineHasInstance,
+  interfaceImplementMarkers,
+  interfaceImplementInterfaces,
   interfaceImplements
 } from 'ts-interface-core'
 
@@ -26,17 +26,17 @@ abstract class IFoo {
   abstract readonly name: string
 }
 // Помечаем интерфейсы основанные на абстрактных классах символами и изменяем Symbol.hasInstance
-interfaceDefineHasInstanceMarker(IFoo)
+interfaceDefineHasInstance(IFoo)
 
 abstract class IBar {
   abstract readonly key: number
 }
-interfaceDefineHasInstanceMarker(IBar)
+interfaceDefineHasInstance(IBar)
 
 abstract class IBaz {
   abstract readonly kind: string
 }
-interfaceDefineHasInstanceMarker(IBaz)
+interfaceDefineHasInstance(IBaz)
 
 class Impl extends IFoo implements IBar, IBaz {
   name = 'foo'
@@ -52,6 +52,7 @@ console.log(ins instanceof Impl) // true
 console.log(ins instanceof IFoo) // true
 console.log(ins instanceof IBar) // true
 console.log(ins instanceof IBaz) // true
+console.log(new class {} instanceof IFoo) // false
 ```
 
 ## Использование в зависимых библиотеках
@@ -64,7 +65,7 @@ console.log(ins instanceof IBaz) // true
 
 ```json
 "peerDependencies": {
-  "ts-interface-core": "^0.1.1"
+  "ts-interface-core": "^0.2.0"
 }
 ```
 
@@ -72,9 +73,9 @@ console.log(ins instanceof IBaz) // true
 
 ```json
 "dependencies": {
-  "ts-interface-core": "^0.1.1"
+  "ts-interface-core": "0.2.0"
 },
 "overrides": {
-  "ts-interface-core": "^0.1.1"
+  "ts-interface-core": "0.2.0"
 }
 ```
