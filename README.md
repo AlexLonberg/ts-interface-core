@@ -3,7 +3,7 @@
 
     npm i ts-interface-core
 
-Набор минимальных утилит для реализации интерфейсов с `instanceof` в TypeScript.
+Набор утилит для реализации интерфейсов с `instanceof` в TypeScript.
 
 Позволяет маркировать интерфейс-классы и проверять реализацию через `instanceof`, даже при множественном или виртуальном наследовании.
 
@@ -79,3 +79,14 @@ console.log(new class {} instanceof IFoo) // false
   "ts-interface-core": "0.2.0"
 }
 ```
+
+Проверить все установленные версии одного пакета можно командой `npm list ts-interface-core`. Если обнаружено несколько версий, команда покажет дерево зависимостей:
+
+```
+my-app@1.0.0
+├─┬ my-lib@0.1.0
+│ └── ts-interface-core@0.1.0
+└── ts-interface-core@0.2.0
+```
+
+Смотрите так же [npm dedupe](https://docs.npmjs.com/cli/v11/commands/npm-dedupe).
