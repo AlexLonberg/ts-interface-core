@@ -15,13 +15,16 @@ export default defineConfig({
       enabled: true,
       // Без этой опции использует корень проекта.
       include: ['src/**/*.ts'],
+      exclude: ['src/**/*.test.ts', 'src/**/*.bench.ts', 'src/**/_*'],
       provider: 'v8',
       reportsDirectory: '.temp/coverage'
     },
     // Config https://vitest.dev/config/#benchmark
     benchmark: {
       include: [
-        'src/instanceof.bench.ts'
+        'src/fnVsFreeze.bench.ts',
+        'src/instanceof.bench.ts',
+        'src/hasOwn.bench.ts'
       ]
     }
   }

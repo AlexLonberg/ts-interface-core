@@ -1,4 +1,6 @@
 
+> ⚠️ DEPRECATED
+
 # Mark and detect interface conformance with instanceof | TypeScript/JS
 
     npm i ts-interface-core
@@ -13,13 +15,29 @@
 
 ```ts
 import {
+  type TClass,
+  INTERFACE_MARKER_ID,
   INTERFACE_MARKER_PROPERTY,
+  interfaceHasInstance,
   interfaceMarker,
+  interfaceMarkersOfObject,
+  interfaceMarkersOfInstance,
+  interfaceMarkersOfClass,
   interfaceDefineHasInstanceMarker,
+  interfaceDefineHasInstanceMarkerAndFreeze,
   interfaceDefineHasInstance,
+  interfaceDefineHasInstanceAndFreeze,
+  interfaceDefineMarkers,
+  interfaceDefineInterfaces,
   interfaceImplementMarkers,
-  interfaceImplementInterfaces,
-  interfaceImplements
+  interfaceImplements,
+  interfaceImplementsAndFreeze,
+  interfaceExtends,
+  interfaceExtendsAndFreeze,
+  interfaceDefineHasInstanceAndImplements,
+  interfaceDefineHasInstanceAndImplementsAndFreeze,
+  interfaceDefineHasInstanceAndExtends,
+  interfaceDefineHasInstanceAndExtendsAndFreeze
 } from 'ts-interface-core'
 
 abstract class IFoo {
@@ -65,7 +83,7 @@ console.log(new class {} instanceof IFoo) // false
 
 ```json
 "peerDependencies": {
-  "ts-interface-core": "^0.2.0"
+  "ts-interface-core": "^0.3.0"
 }
 ```
 
@@ -73,20 +91,22 @@ console.log(new class {} instanceof IFoo) // false
 
 ```json
 "dependencies": {
-  "ts-interface-core": "0.2.0"
+  "ts-interface-core": "0.3.0"
 },
 "overrides": {
-  "ts-interface-core": "0.2.0"
+  "ts-interface-core": "0.3.0"
 }
 ```
+
+> Фактически, глобальный символ, используемый как свойство доступа к символу интерфейса, получен путем `Symbol.for(uuid)`, и даже разные версии библиотек не вызовут ошибку.
 
 Проверить все установленные версии одного пакета можно командой `npm list ts-interface-core`. Если обнаружено несколько версий, команда покажет дерево зависимостей:
 
 ```
 my-app@1.0.0
 ├─┬ my-lib@0.1.0
-│ └── ts-interface-core@0.1.0
-└── ts-interface-core@0.2.0
+│ └── ts-interface-core@0.2.0
+└── ts-interface-core@0.3.0
 ```
 
 Смотрите так же [npm dedupe](https://docs.npmjs.com/cli/v11/commands/npm-dedupe).

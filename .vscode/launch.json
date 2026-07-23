@@ -5,41 +5,19 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Launch TS vite-node File",
-      "request": "launch",
+      "name": "Launch TS/JS File",
       "type": "node",
+      "request": "launch",
       "console": "integratedTerminal",
-      // "console": "internalConsole",
-      "runtimeExecutable": "vite-node",
+      "program": "${file}",
       "skipFiles": [
         "<node_internals>/**",
-        "node_modules/**"
+        "**/node_modules/**"
       ],
       "outFiles": [
-        "${workspaceFolder}/**/*.js",
-        "${workspaceFolder}/**/*.ts"
-      ],
-      // "smartStep": true,
-      // "autoAttachChildProcesses": false,
-      // Для передачи файла можно использовать как program, так и args,
-      // разница будет в пути: program - '.\src\some.ts', или абсолютный с args - 'C:\...\some.ts'
-      "program": "${file}",
-      // "args": [
-      //   "${file}"
-      // ],
-    },
-    {
-      "type": "node",
-      "request": "launch",
-      "name": "Launch JS File",
-      "skipFiles": [
-        "<node_internals>/**"
-      ],
-      "program": "${file}",
-      "outFiles": [
+        "${workspaceFolder}/**/*.ts",
         "${workspaceFolder}/**/*.js"
-      ],
-      "console": "integratedTerminal"
+      ]
     }
   ]
 }

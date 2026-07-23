@@ -1,59 +1,61 @@
-import jsEslint from '@eslint/js'
+import { defineConfig } from 'eslint/config'
 import tsEslint from 'typescript-eslint'
 import stylistic from '@stylistic/eslint-plugin'
+import { rules, rulesTest } from './eslint.rules.js'
 
-const jsRueles = jsEslint.configs.recommended.rules
-const tsRules = tsEslint.configs.stylisticTypeChecked
-  .reduce((a, item) => ((item.rules ? (a = { ...a, ...item.rules }) : a), a), {})
-
-// Пример конфигурации https://typescript-eslint.io/packages/typescript-eslint#advanced-usage
-export default tsEslint.config(
+export default defineConfig([
+  {
+    ignores: [
+      '.*/**',
+      'node_modules/**',
+      'dist/**'
+    ]
+  },
   {
     name: 'ts-interface-core',
     files: [
-      'src/**/*.{ts,js}',
-      'scripts/**/*.{ts,js}',
-      'eslint.config.js',
-      'vitest.config.ts'
+      'src/**/*.ts'
+    ],
+    ignores: [
+      'src/**/*.{test,bench}.ts',
+      'src/**/_*'
     ],
     languageOptions: {
-      // NOTE В одних примерах ecmaVersion/sourceType здесь, в других в parserOptions - не знаю куда лучше положить
-      ecmaVersion: 'latest',
+      ecmaVersion: 2022,
       sourceType: 'module',
       parser: tsEslint.parser,
       parserOptions: {
-        project: [
-          'tsconfig.project.json'
-        ]
+        projectService: true
       }
     },
     plugins: {
       '@typescript-eslint': tsEslint.plugin,
       '@stylistic': stylistic
     },
-    rules: {
-      ...jsRueles,
-      ...tsRules,
-      // Это правило `a === b` не установлено в jsEslint.configs.recommended и вероятно во всех плагинах.
-      eqeqeq: [
-        'error',
-        'always'
-      ],
-      // Правила для JS путают сигнатуры типов(например функций) с реальными, их следует отключить
-      'no-unused-vars': 'off',
-      '@typescript-eslint/no-unused-vars': ['error', {
-        vars: 'all',
-        varsIgnorePattern: '^_',
-        args: 'all',
-        argsIgnorePattern: '^_',
-        caughtErrors: 'all',
-        caughtErrorsIgnorePattern: '^_'
-      }],
-      // Требовать импорта типов как 'import {type Foo} from ...'
-      '@typescript-eslint/consistent-type-imports': ['error', { prefer: 'type-imports', fixStyle: 'inline-type-imports' }],
-      //
-      // ## Стиль ##
-      //
-      '@stylistic/quotes': ['error', 'single', { avoidEscape: true }]
-    }
-  })
+    rules
+  },
+  {
+    name: 'ts-interface-core-tests',
+    files: [
+      'src/**/_*.ts',
+      'src/**/*.{test,bench}.ts',
+      'scripts/**/*.{ts,js}',
+      'eslint.rules.js',
+      'eslint.config.js',
+      'vitest.config.ts'
+    ],
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: 'module',
+      parser: tsEslint.parser,
+      parserOptions: {
+        projectService: true
+      }
+    },
+    plugins: {
+      '@typescript-eslint': tsEslint.plugin,
+      '@stylistic': stylistic
+    },
+    rules: rulesTest
+  }
+])

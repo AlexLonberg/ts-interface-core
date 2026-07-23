@@ -1,10 +1,5 @@
 import {
-  // INTERFACE_MARKER_PROPERTY,
-  // interfaceMarker,
-  // interfaceDefineHasInstanceMarker,
   interfaceDefineHasInstance,
-  // interfaceImplementMarkers,
-  // interfaceImplementInterfaces,
   interfaceImplements
   // } from '../src/index.js'
 } from '../dist/index.js'

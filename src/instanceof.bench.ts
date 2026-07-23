@@ -7,7 +7,7 @@ function defineHasInstance (set: WeakSet<Function>, cls: object) {
       configurable: false,
       enumerable: false,
       writable: false,
-      value: (ins: any) => {
+      value: (ins: unknown) => {
         let proto = ins?.constructor
         while (proto) {
           if (set.has(proto)) return true
@@ -35,7 +35,7 @@ const IFooSubclasses = new WeakSet()
 abstract class IFoo {
   abstract readonly name: string
 
-  static _implement (cls: abstract new (..._: any[]) => any) {
+  static _implement (cls: abstract new (..._: any[]) => unknown) {
     IFooSubclasses.add(cls)
   }
 }
@@ -45,7 +45,7 @@ const IBarSubclasses = new WeakSet()
 abstract class IBar {
   abstract readonly key: number
 
-  static _implement (cls: abstract new (..._: any[]) => any) {
+  static _implement (cls: abstract new (..._: any[]) => unknown) {
     IBarSubclasses.add(cls)
   }
 }
@@ -56,7 +56,7 @@ defineHasInstance(IBarSubclasses, IBar)
 abstract class IFooSymbol {
   abstract readonly name: string
 
-  static _implement (cls: abstract new (..._: any[]) => any) {
+  static _implement (cls: abstract new (..._: any[]) => unknown) {
     interfaceImplements(cls, IFooSymbol)
   }
 }
@@ -65,7 +65,7 @@ interfaceDefineHasInstance(IFooSymbol)
 abstract class IBarSymbol {
   abstract readonly key: number
 
-  static _implement (cls: abstract new (..._: any[]) => any) {
+  static _implement (cls: abstract new (..._: any[]) => unknown) {
     interfaceImplements(cls, IBarSymbol)
   }
 }
@@ -114,27 +114,33 @@ class CustomClassSymbol extends IClassSymbolBase implements IBarSymbol {
 IBarSymbol._implement(CustomClassSymbol)
 
 bench('native if ', () => {
-  const ins = new NativeClass(123)
-  if (ins instanceof NativeFoo) { /**/ }
-  if (ins instanceof NativeBar) { /**/ }
-  if (ins instanceof NativeClassBase) { /**/ }
-  if (ins instanceof NativeClass) { /**/ }
+  for (let i = 0; i < 10; ++i) {
+    const ins = new NativeClass(123)
+    if (ins instanceof NativeFoo) { /**/ }
+    if (ins instanceof NativeBar) { /**/ }
+    if (ins instanceof NativeClassBase) { /**/ }
+    if (ins instanceof NativeClass) { /**/ }
+  }
 })
 
 bench('custom if ', () => {
-  const ins = new CustomClass(123)
-  if (ins instanceof IFoo) { /**/ }
-  if (ins instanceof IBar) { /**/ }
-  if (ins instanceof IClassBase) { /**/ }
-  if (ins instanceof CustomClass) { /**/ }
+  for (let i = 0; i < 10; ++i) {
+    const ins = new CustomClass(123)
+    if (ins instanceof IFoo) { /**/ }
+    if (ins instanceof IBar) { /**/ }
+    if (ins instanceof IClassBase) { /**/ }
+    if (ins instanceof CustomClass) { /**/ }
+  }
 })
 
 bench('symbol if', () => {
-  const ins = new CustomClassSymbol(123)
-  if (ins instanceof IFooSymbol) { /**/ }
-  if (ins instanceof IBarSymbol) { /**/ }
-  if (ins instanceof IClassSymbolBase) { /**/ }
-  if (ins instanceof CustomClassSymbol) { /**/ }
+  for (let i = 0; i < 10; ++i) {
+    const ins = new CustomClassSymbol(123)
+    if (ins instanceof IFooSymbol) { /**/ }
+    if (ins instanceof IBarSymbol) { /**/ }
+    if (ins instanceof IClassSymbolBase) { /**/ }
+    if (ins instanceof CustomClassSymbol) { /**/ }
+  }
 })
 
 //  ✓ src/instanceof.bench.ts 8131ms
