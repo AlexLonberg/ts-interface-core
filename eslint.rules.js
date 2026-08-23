@@ -84,6 +84,8 @@ const rules = {
   // элемент существует и его можно утвердить array[i]!. Но правильно не только для массивов и отключать нежелательно.
   '@typescript-eslint/no-non-null-assertion': 'warn',
   //
+  '@typescript-eslint/no-namespace': 'off',
+  //
   '@typescript-eslint/unified-signatures': 'off',
   // Все эти опции не дают работать с неопределенными типами при сериализации.
   '@typescript-eslint/unbound-method': 'off',
@@ -127,6 +129,7 @@ const rulesTest = {
   '@typescript-eslint/no-explicit-any': 'off',
   '@typescript-eslint/no-unnecessary-condition': 'off',
   '@typescript-eslint/no-unused-expressions': 'off',
+  '@typescript-eslint/no-unused-vars': 'off',
   '@typescript-eslint/restrict-plus-operands': 'off',
   // Пять правил не дают использовать `any`, даже если такие типы определены средой выполнения, пример `console.log(message?: any)`
   '@typescript-eslint/no-unsafe-call': 'off',

@@ -1,112 +1,84 @@
 
-> ⚠️ DEPRECATED
-
-# Mark and detect interface conformance with instanceof | TypeScript/JS
+# 🧬 Runtime interface simulation, metadata, and type guards for TypeScript.
 
     npm i ts-interface-core
 
-Набор утилит для реализации интерфейсов с `instanceof` в TypeScript.
+Набор утилит, позволяющих перенести интерфейсы `TypeScript` в runtime. Определяйте дескрипторы интерфейсов, симулируйте их реализацию классами или объектами и выполняйте безопасное сужение типов через `I.is()`.
 
-Позволяет маркировать интерфейс-классы и проверять реализацию через `instanceof`, даже при множественном или виртуальном наследовании.
+💡 **Почему это удобно?**
 
-[Использование в зависимых библиотеках 👇](#использование-в-зависимых-библиотеках)
+* **Единая точка входа**: Всё (утилиты, TypeGuards, типы) экспортируется через одну функцию `interfaceDescriptor`.
+* **Безопасные Type Guards**: Метод `.is()` сужает типы на уровне компилятора `TypeScript`.
+* **Поддержка любых сущностей**: Работает с классами, их инстансами, POJO-объектами и даже функциями.
 
-## Пример использования
+## 🚀 Быстрый старт
 
 ```ts
-import {
-  type TClass,
-  INTERFACE_MARKER_ID,
-  INTERFACE_MARKER_PROPERTY,
-  interfaceHasInstance,
-  interfaceMarker,
-  interfaceMarkersOfObject,
-  interfaceMarkersOfInstance,
-  interfaceMarkersOfClass,
-  interfaceDefineHasInstanceMarker,
-  interfaceDefineHasInstanceMarkerAndFreeze,
-  interfaceDefineHasInstance,
-  interfaceDefineHasInstanceAndFreeze,
-  interfaceDefineMarkers,
-  interfaceDefineInterfaces,
-  interfaceImplementMarkers,
-  interfaceImplements,
-  interfaceImplementsAndFreeze,
-  interfaceExtends,
-  interfaceExtendsAndFreeze,
-  interfaceDefineHasInstanceAndImplements,
-  interfaceDefineHasInstanceAndImplementsAndFreeze,
-  interfaceDefineHasInstanceAndExtends,
-  interfaceDefineHasInstanceAndExtendsAndFreeze
-} from 'ts-interface-core'
+import { interfaceDescriptor } from 'ts-interface-core'
 
-abstract class IFoo {
-  abstract readonly name: string
+// 1. Объявляем интерфейсы и их дескрипторы
+interface IFoo {
+  readonly foo: boolean
 }
-// Помечаем интерфейсы основанные на абстрактных классах символами и изменяем Symbol.hasInstance
-interfaceDefineHasInstance(IFoo)
+const IFoo = interfaceDescriptor<IFoo>()
 
-abstract class IBar {
-  abstract readonly key: number
+// Расширяем интерфейсы, передавая родителей
+interface IBar extends IFoo {
+  readonly bar: number
 }
-interfaceDefineHasInstance(IBar)
+const IBar = interfaceDescriptor<IBar>(IFoo)
 
-abstract class IBaz {
-  abstract readonly kind: string
+// 2. Реализуем интерфейс в классе
+class MyService implements IBar {
+  foo = true
+  bar = 42
 }
-interfaceDefineHasInstance(IBaz)
 
-class Impl extends IFoo implements IBar, IBaz {
-  name = 'foo'
-  key = 123
-  kind = 'impl'
+// Применяем симуляцию
+// (автоматически подключаются и родительские интерфейсы)
+IBar.impl(MyService)
+
+// 3. Безопасная проверка и сужение типов в рантайме
+const value: unknown = new MyService()
+
+if (IFoo.is(value)) {
+  console.log(value.foo) // TypeScript знает, что это IFoo
 }
-// Симулируем реализацию.
-// Явно наследуемые классы `extends IFoo`, работают по умолчанию
-interfaceImplements(Impl, IBar, IBaz)
 
-const ins = new Impl()
-console.log(ins instanceof Impl) // true
-console.log(ins instanceof IFoo) // true
-console.log(ins instanceof IBar) // true
-console.log(ins instanceof IBaz) // true
-console.log(new class {} instanceof IFoo) // false
-```
-
-## Использование в зависимых библиотеках
-
-Когда несколько библиотек зависят от одного общего пакета `ts-interface-core`, рекомендуется указывать его в разделе `peerDependencies` каждой библиотеки. Это необходимо для обеспечения корректной работы функций, которые опираются на идентичность символа `INTERFACE_MARKER_PROPERTY`. Несогласованность версий или множественные экземпляры `ts-interface-core` приведут к неочевидным ошибкам.
-
-**Подход, рекомендуемый при работе с библиотеками, разделяющими общие определения:**
-
-В библиотеке зависимой от `ts-interface-core` [peerDependencies](https://docs.npmjs.com/cli/v9/configuring-npm/package-json#peerdependencies):
-
-```json
-"peerDependencies": {
-  "ts-interface-core": "^0.3.0"
+if (IBar.is(value)) {
+  console.log(value.bar) // TypeScript знает, что это IBar
 }
 ```
 
-В основном приложении обеспечьте одну версию `ts-interface-core` для всех зависимостей через [overrides](https://docs.npmjs.com/cli/v9/configuring-npm/package-json#overrides):
+## 🛠️ Гибкие сценарии
 
-```json
-"dependencies": {
-  "ts-interface-core": "0.3.0"
-},
-"overrides": {
-  "ts-interface-core": "0.3.0"
+### 🪄 Маркировка обычных объектов и функций
+
+Для объектов, анонимных классов или функций используйте метод `implAny` или `implAndFreeze`:
+
+```ts
+const config = { host: 'localhost', port: 8080 }
+
+// Маркируем и замораживаем объект
+IConfig.implAndFreeze(config)
+
+console.log(IConfig.is(config)) // true
+```
+
+### 🎲 Namespace типов
+
+Вам не нужно импортировать вспомогательные типы отдельно — они уже доступны прямо в `interfaceDescriptor`:
+
+```ts
+import { interfaceDescriptor } from 'ts-interface-core'
+
+// interfaceDescriptor.I<T> — тип дескриптора
+// interfaceDescriptor.TClass — тип конструктора класса
+
+function registerPlugin(
+  target: interfaceDescriptor.TClass,
+  descriptor: interfaceDescriptor.I<any>
+) {
+  descriptor.impl(target)
 }
 ```
-
-> Фактически, глобальный символ, используемый как свойство доступа к символу интерфейса, получен путем `Symbol.for(uuid)`, и даже разные версии библиотек не вызовут ошибку.
-
-Проверить все установленные версии одного пакета можно командой `npm list ts-interface-core`. Если обнаружено несколько версий, команда покажет дерево зависимостей:
-
-```
-my-app@1.0.0
-├─┬ my-lib@0.1.0
-│ └── ts-interface-core@0.2.0
-└── ts-interface-core@0.3.0
-```
-
-Смотрите так же [npm dedupe](https://docs.npmjs.com/cli/v11/commands/npm-dedupe).

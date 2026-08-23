@@ -1,6 +1,6 @@
 {
   "name": "ts-interface-core",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Mark and detect interface conformance with instanceof.",
   "author": "Alexander Lonberg <alexlonberg@gmail.com>",
   "homepage": "https://github.com/AlexLonberg/ts-interface-core",
@@ -27,11 +27,11 @@
     "@eslint/js": "^10.0.1",
     "@stylistic/eslint-plugin": "^5.10.0",
     "@types/node": "^24.5.0",
-    "@vitest/coverage-v8": "^4.1.6",
-    "eslint": "^10.3.0",
+    "@vitest/coverage-v8": "^4.1.10",
+    "eslint": "^10.7.0",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.59.3",
-    "vitest": "^4.1.6"
+    "typescript-eslint": "^8.65.0",
+    "vitest": "^4.1.10"
   },
   "private": true,
   "exports": {

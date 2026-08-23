@@ -1,8 +1,8 @@
 import { bench } from 'vitest'
-import { INTERFACE_MARKER_PROPERTY } from './index.js'
+import { LIBRARY_ID } from './index.js'
 
 class SomeInterface { }
-Object.defineProperty(SomeInterface, INTERFACE_MARKER_PROPERTY, {
+Object.defineProperty(SomeInterface, LIBRARY_ID, {
   configurable: false,
   enumerable: false,
   writable: false,
@@ -13,7 +13,7 @@ Object.defineProperty(SomeInterface, INTERFACE_MARKER_PROPERTY, {
 
 bench('Object.hasOwn', () => {
   for (let i = 0; i < 100; ++i) {
-    if (Object.hasOwn(SomeInterface, INTERFACE_MARKER_PROPERTY)) {
+    if (Object.hasOwn(SomeInterface, LIBRARY_ID)) {
       // ...
     }
   }
@@ -21,7 +21,7 @@ bench('Object.hasOwn', () => {
 
 bench('Object.prototype.hasOwnProperty.call', () => {
   for (let i = 0; i < 100; ++i) {
-    if (Object.prototype.hasOwnProperty.call(SomeInterface, INTERFACE_MARKER_PROPERTY)) {
+    if (Object.prototype.hasOwnProperty.call(SomeInterface, LIBRARY_ID)) {
       // ...
     }
   }
@@ -29,7 +29,7 @@ bench('Object.prototype.hasOwnProperty.call', () => {
 
 bench('Object.getOwnPropertyDescriptor', () => {
   for (let i = 0; i < 100; ++i) {
-    if (Object.getOwnPropertyDescriptor(SomeInterface, INTERFACE_MARKER_PROPERTY)) {
+    if (Object.getOwnPropertyDescriptor(SomeInterface, LIBRARY_ID)) {
       // ...
     }
   }

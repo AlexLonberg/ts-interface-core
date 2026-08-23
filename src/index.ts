@@ -1,5 +1,10 @@
-
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 const _hasOwnProperty = Object.prototype.hasOwnProperty
+
+/**
+ * Глобальный уникальный идентификатор библиотеки.
+ */
+const LIBRARY_ID = 'ts-interface-core-acdfa2f4-97d7-4cce-b880-3226dee0304d'
 
 // Это единственный способ описать все возможные конструкторы и использовать их как эталонный тип.
 abstract class _AbstractClassPrivateConstructor {
@@ -22,517 +27,292 @@ type TClass = TClassConstructor | TClassPrivateConstructor
 // type TClassPrivateConstructor = (Function & { prototype: object & { constructor: Function } })
 
 /**
- * Глобальный уникальный идентификатор. Применение:
- *
- *  + Получение глобального символа {@link INTERFACE_MARKER_PROPERTY}.
- *  + Идентификация любого символа(свойства) на объекте, который является уникальным маркером интерфейса.
+ * Дескриптор интерфейса.
  */
-const INTERFACE_MARKER_ID = 'ts-interface-core-f784779d-80eb-473a-960d-2248475b280e'
+interface InterfaceDescriptor<T> {
+  /**
+   * Уникальный маркер связанный с этим интерфейсом.
+   *
+   * Именно этот маркер используется для проверки принадлежности типа с помощью {@link is()}.
+   */
+  readonly marker: symbol
+  /**
+   * Дескрипторы родительских интерфейсов переданные аргументами в фабрику {@link InterfaceDescriptorFactory}.
+   */
+  readonly parents: null | readonly InterfaceDescriptor<any>[]
+  /**
+   * Плоский набор уникальных дескрипторов, которые должны использоваться в runtime для симуляции реализации, путем
+   * установки маркеров на целевой тип. Наличие этого свойства зависит от наличия {@link parents} и не имеет текущего
+   * дескриптора.
+   */
+  readonly descriptors: null | readonly InterfaceDescriptor<any>[]
+  /**
+   * Симулировать реализацию интерфейса и всех его предков.
+   *
+   * Функция определяет на прототипе класса собственный дескриптор и {@link descriptors} которых еще нет в цепочке
+   * прототипов. По умолчанию, {@link PropertyDescriptor} устанавливается с атрибутами
+   * `{configurable: false, enumerable: false, writable: false, value:InterfaceDescriptor}`, где `value` - ссылается на
+   * текущий собственный дескриптор {@link InterfaceDescriptor}.
+   *
+   * @param cls Целевой класс. **Warning:** Прототип не должен быть заморожен.
+   */
+  readonly impl: (cls: TClass) => void
+  /**
+   * То же что и {@link impl()}, но после определения маркеров замораживает прототип `Object.freeze(cls.prototype)`.
+   */
+  readonly implAndFreeze: (cls: TClass) => void
+  /**
+   * То же что и {@link impl()}, но применяется к объекту а не прототипу.
+   *
+   * @param obj Объект не должен быть заморожен.
+   */
+  readonly implAny: (obj: object) => void
+  /**
+   * То же что и {@link implAny()}, но после определения маркеров замораживает объект `Object.freeze(obj)`.
+   */
+  readonly implAnyAndFreeze: (obj: object) => void
+  /**
+   * Принадлежит ли объект этому типу. Фактически проверяется наличие {@link marker} во всей цепочке прототипа.
+   *
+   * @param ins Любой объект.
+   */
+  readonly is: (ins: any) => ins is T
+}
 
 /**
- * Скрытое свойство классов-интерфейсов на котором определен уникальный символ интерфейса.
+ * Фабрика дескрипторов.
  */
-const INTERFACE_MARKER_PROPERTY: unique symbol = Symbol.for(INTERFACE_MARKER_ID)
+interface InterfaceDescriptorFactory {
+  /**
+   * Создает дескриптор интерфеса для симуляции наследования и проверки принадлежности типу.
+   *
+   * @param parents Дополнительные дескрипторы-предки, от которых расширен целевой тип.
+   */
+  <T> (...parents: readonly InterfaceDescriptor<any>[]): InterfaceDescriptor<T>
+  /**
+   * Идентификатор библиотеки.
+   */
+  readonly libraryId: typeof LIBRARY_ID
+  /**
+   * Устанавливает прототипу класса дескрипторы, которых еще нет в цепочке прототипов.
+   *
+   * **Note:** Эта функция последовательно вызывает {@link InterfaceDescriptor.impl()}.
+   *
+   * @param cls         Целевой класс.
+   * @param descriptors Набор дескрипторов.
+   * @returns Возвращает аргумент `cls`, приведенный к типу `T`.
+   */
+  readonly mark: <T>(cls: TClass, descriptors: Iterable<InterfaceDescriptor<any>>) => T
+  /**
+   * То же самое что {@link mark()}, но после применения замораживает прототип класса.
+   */
+  readonly markAndFreeze: <T>(cls: TClass, descriptors: Iterable<InterfaceDescriptor<any>>) => T
+  /**
+   * Маркирует любой объект(в том числе функцию).
+   *
+   * В отличие от {@link mark()}, эта функция не вытаскивает прототип `cls.prototype`, а маркирует сам объект.
+   *
+   * @param obj         Целевой объект.
+   * @param descriptors Набор дескрипторов.
+   * @returns Возвращает аргумент `obj`, приведенный к типу `T`.
+   */
+  readonly markAny: <T>(obj: object, descriptors: Iterable<InterfaceDescriptor<any>>) => T
+  /**
+   * То же самое что {@link markAny()}, но после применения замораживает объект.
+   */
+  readonly markAnyAndFreeze: <T>(obj: object, descriptors: Iterable<InterfaceDescriptor<any>>) => T
+  /**
+   * Собирает все дескрипторы, определенные на всей цепочке прототипов этого класса.
+   *
+   * @param cls Целевой класс.
+   */
+  readonly descriptorsOf: (cls: TClass) => InterfaceDescriptor<any>[]
+  /**
+   * Собирает все дескрипторы, определенные на объекте и на всей цепочке прототипов для этого объекта.
+   *
+   * @param obj Целевой объект.
+   */
+  readonly descriptorsOfAny: (obj: object) => InterfaceDescriptor<any>[]
+}
 
 /**
- * Функция устанавливаемая классам-интерфейсам для переопределения статического метода {@link Symbol.hasInstance}.
+ * Добавляет объекту, который должен симулировать реализацию, дескриптор интерфейса.
  *
- * **Note:** Все функции интерфейсов `interface*()` определяют свойства с дескрипторами не позволяющими изменить
- * интерфейс и его реализацию. Маркер {@link INTERFACE_MARKER_PROPERTY} и функция {@link interfaceHasInstance()} могут
- * использоваться для пользовательской реализации.
+ * Если в цепочке прототипа уже есть `(marker in obj)`, функция ничего не делает.
  *
- * @param this Класс интерфейс. Это не параметр, а `this` класса.
- * @param ins  Проверяемый инстанс.
- * @returns Результат наличия уникального символа(маркера интерфейса) на объекте.
+ * @param obj Целевой объект, функция или прототип класса(`cls.prototype`). **Warning:** Объект не должен быть заморожен.
+ * @param descriptor Дескриптор интерфейса.
  *
  * @example
  * ```ts
- * // Определим конструктор класса-интерфейса
- * const customMarker = Symbol()
- * class CustomInterface {
- *   static [INTERFACE_MARKER_PROPERTY] = customMarker; // Доступ к маркеру.
- *   static [Symbol.hasInstance] = interfaceHasInstance; // Функция проверки маркера.
- *   [customMarker] = INTERFACE_MARKER_ID; // Реализация через наследование.
- * }
- *
- * class Impl implements CustomInterface { }
- * interfaceImplements(Impl, CustomInterface)
- * const impl = new Impl()
- * expect(impl instanceof CustomInterface).toBe(true)
+ * class Foo {}
+ * interfaceDefineDescriptor(Foo.prototype, descriptor)
  * ```
  */
-function interfaceHasInstance (this: { [INTERFACE_MARKER_PROPERTY]: symbol }, ins: any): boolean {
-  try {
-    return this[INTERFACE_MARKER_PROPERTY] in ins
-  } catch {
-    return false
+function interfaceDefineDescriptor (obj: object, descriptor: InterfaceDescriptor<any>): void {
+  if (!(descriptor.marker in obj)) {
+    Object.defineProperty(obj, descriptor.marker, {
+      configurable: false,
+      enumerable: false,
+      writable: false,
+      value: descriptor
+    })
   }
 }
 
 /**
- * Возвращает маркер интерфейса или `null`(если интерфейс не был определен).
- *
- * @param cls Ссылка на определение класса-интерфейса.
- *
- * @example
- * ```ts
- * class Foo {...}
- * const none = interfaceMarker(Foo) // null
- * interfaceDefineHasInstance(Foo)
- * const marker = interfaceMarker(Foo) // symbol
- * ```
+ * Сплющивает набор всех дескрипторов в плоский массив с уникальными элементами.
  */
-function interfaceMarker (cls: TClass): null | symbol {
-  let marker: any
-  if (_hasOwnProperty.call(cls, INTERFACE_MARKER_PROPERTY) && (typeof (marker = (cls as any)[INTERFACE_MARKER_PROPERTY]) === 'symbol')) {
-    return marker
+function flattenDescriptors (ds: readonly InterfaceDescriptor<any>[]): readonly InterfaceDescriptor<any>[] {
+  const flatSet = new Set(ds)
+  for (let i = 0; i < ds.length; ++i) {
+    const child = ds[i]!.descriptors
+    if (child) {
+      // Так как у предков поле descriptors УЖЕ плоское, мы просто копируем его
+      for (let j = 0; j < child.length; j++) {
+        flatSet.add(child[j]!)
+      }
+    }
   }
-  return null
+  return Object.freeze(Array.from(flatSet))
 }
 
 /**
- * Возвращает все маркеры интерфейсов определенные на объекте и во всей цепочке прототипов.
+ * Собирает все дескрипторы интерфейсов определенные на объекте и во всей цепочке прототипов.
  *
- * **Note:** В отличие от {@link interfaceMarker()}, которая получает маркер из свойства определенного на классе, эта
- * функция собирает свойства символы с уникальным глобальным {@link INTERFACE_MARKER_ID}.
- *
- * @param obj Объект на котором нужно найти все символы, в том числе и в цепочке прототипов.
- * @param symbols Набор для записи уникальных маркеров, который возвращается функцией.
+ * @param obj Целевой объект. Для классов это должен быть прототип `cls.prototype`.
  */
-function interfaceMarkersOfObjectInto (obj: object, symbols: Set<symbol>): Set<symbol> {
+function interfaceDescriptorsOfAny (obj: object): InterfaceDescriptor<any>[] {
+  const descriptors: InterfaceDescriptor<any>[] = []
   let proto: null | object = obj
   while (proto) {
     const props = Object.getOwnPropertySymbols(proto)
     for (const key of props) {
       const ds = Object.getOwnPropertyDescriptor(proto, key)
-      if (ds && _hasOwnProperty.call(ds, 'value') && (ds.value === INTERFACE_MARKER_ID)) {
-        symbols.add(key)
+      // Проверяем что символ не является геттером и ссылается на объект с нашим дескриптором.
+      // Секрет в том, что свойство-символ равно полю marker.
+      if (ds && _hasOwnProperty.call(ds, 'value') && ds.value && (typeof ds.value === 'object') &&
+        _hasOwnProperty.call(ds.value, 'marker') &&
+
+        (ds.value.marker === key)) {
+        descriptors.push(ds.value as InterfaceDescriptor<any>)
       }
     }
     proto = Object.getPrototypeOf(proto)
   }
-  return symbols
+  return descriptors
+}
+
+function interfaceMark<T> (cls: TClass, descriptors: Iterable<InterfaceDescriptor<any>>): T {
+  for (const ds of descriptors) {
+    ds.impl(cls)
+  }
+  return cls as T
+}
+
+function interfaceMarkAny<T> (obj: object, descriptors: Iterable<InterfaceDescriptor<any>>): T {
+  for (const ds of descriptors) {
+    ds.implAny(obj)
+  }
+  return obj as T
 }
 
 /**
- * Возвращает все маркеры интерфейсов определенные на объекте и во всей цепочке прототипов.
+ * Создает дескриптор интерфеса для симуляции наследования и проверки принадлежности типу.
  *
- * **Note:** В отличие от {@link interfaceMarker()}, которая получает маркер из свойства определенного на классе, эта
- * функция собирает свойства символы с уникальным глобальным {@link INTERFACE_MARKER_ID}.
- *
- * @param obj Объект на котором нужно найти все символы, в том числе и в цепочке прототипов.
+ * @param ps Дополнительные дескрипторы-предки, от которого расширен целевой тип.
  */
-function interfaceMarkersOfObject (obj: object): Set<symbol> {
-  return interfaceMarkersOfObjectInto(obj, new Set())
-}
-
-/**
- * Возвращает все маркеры интерфейсов определенные во всей цепочке прототипов инстанса, исключая сам инстанс.
- *
- * **Note:** В отличие от {@link interfaceMarkersOfObject()}, которая обходит объект и его прототипы, эта функция
- * игнорирует свойства инстанса, извлекает прототип и делегирует сбор символов {@link interfaceMarkersOfObject()}.
- *
- * @param ins Ссылка на инстанс класса.
- */
-function interfaceMarkersOfInstance (ins: object): Set<symbol> {
-  return interfaceMarkersOfObjectInto(Object.getPrototypeOf(ins), new Set())
-}
-
-/**
- * Возвращает все маркеры интерфейсов определенные на прототипе класса и всей цепочке прототипов.
- *
- * **Note:** В отличие от {@link interfaceMarker()}, которая получает маркер из свойства определенного на классе, эта
- * функция извлекает прототип и делегирует сбор символов {@link interfaceMarkersOfObject}.
- *
- * @param cls Ссылка на определение класса-интерфейса.
- */
-function interfaceMarkersOfClass (cls: TClass): Set<symbol> {
-  return interfaceMarkersOfObjectInto(cls.prototype, new Set())
-}
-
-/**
- * Устанавливает классу маркер интерфейса и добавляет метод проверки наследников класса `Symbol.hasInstance()`.
- *
- * **Note:** Функция должна использоваться всеми интерфейсами, определенными как классы.
- *
- * **Warning:** Прототип не должен быть заморожен.
- *
- * @param cls    Ссылка на определение класса-интерфейса.
- * @param marker Уникальный символ, который будет добавлен прототипу класса и доступен по {@link INTERFACE_MARKER_PROPERTY}.
- * @throws Ошибка, если на прототипе класса определен другой маркер или невозможно переопределить {@link Symbol.hasInstance}.
- *
- * @example
- * ```ts
- * class Foo {}
- * const marker = Symbol()
- * interfaceDefineHasInstanceMarker(Foo, marker)
- *
- * const obj = {}
- * interfaceDefineMarkers(obj, marker)
- * obj instanceof Foo // true
- * ```
- */
-function interfaceDefineHasInstanceMarker (cls: TClass, marker: symbol): void {
-  // Проверяем возможность определения интерфейса
-  let noMarker = false
-  if (!_hasOwnProperty.call(cls, INTERFACE_MARKER_PROPERTY)) {
-    noMarker = true
-  }
-  else if ((cls as any)[INTERFACE_MARKER_PROPERTY] !== marker) {
-    throw new Error('[ts-interface-core] Невозможно переопределить интерфейс с другим маркером.')
-  }
-  // Переопределяем метод проверки наследования
-  if (!_hasOwnProperty.call(cls, Symbol.hasInstance)) {
-    Object.defineProperty(cls, Symbol.hasInstance, {
-      configurable: false,
-      enumerable: false,
-      writable: false,
-      value: interfaceHasInstance
-    })
-  }
-  else if ((cls as any)[Symbol.hasInstance] !== interfaceHasInstance) {
-    throw new Error('[ts-interface-core] Невозможно переопределить hasInstance.')
-  }
-  // Определяем статическое свойство для всех классов, для доступа к символу
-  if (noMarker) {
-    Object.defineProperty(cls, INTERFACE_MARKER_PROPERTY, {
-      configurable: false,
-      enumerable: false,
-      writable: false,
-      value: marker
-    })
-  }
-  // Так же определяем символ на самом прототипе, иначе не сработает instanceof для простого наследования класса-интерфейса
-  if (!_hasOwnProperty.call(cls.prototype, marker)) {
-    Object.defineProperty(cls.prototype, marker, {
-      configurable: false,
-      enumerable: false,
-      writable: false,
-      value: INTERFACE_MARKER_ID // NOTE Помечаем маркер - что он относится к нашим интерфейсам.
-    })
-  }
-}
-
-/**
- * Вызывает {@link interfaceDefineHasInstanceMarker()}, после чего замораживает прототип класса {@link cls} с помощью
- * `Object.freeze(cls.prototype)`.
- */
-function interfaceDefineHasInstanceMarkerAndFreeze (cls: TClass, marker: symbol): void {
-  interfaceDefineHasInstanceMarker(cls, marker)
-  Object.freeze(cls.prototype)
-}
-
-/**
- * Устанавливает классу маркер интерфейса и добавляет метод проверки наследников класса {@link Symbol.hasInstance}.
- *
- * **Note:** Функция должна использоваться всеми интерфейсами, определенными как классы. Для справки: внутри использует
- * {@link interfaceDefineHasInstanceMarker()}, вызывая с параметром `Symbol`.
- *
- * **Warning:** Прототип не должен быть заморожен.
- *
- * @param cls Ссылка на определение класса-интерфейса.
- * @returns Возвращает маркер. Если для класса маркер был определен ранее, функция ничего не делает и возвращает ранее
- *          определенный маркер.
- * @throws Ошибка, если невозможно переопределить {@link Symbol.hasInstance}.
- *
- * @example
- * ```ts
- * class Foo {}
- * interfaceDefineHasInstance(Foo)
- *
- * class Bar implements Foo {}
- * interfaceImplements(Bar, Foo)
- * (new Bar()) instanceof Foo // true
- * ```
- */
-function interfaceDefineHasInstance (cls: TClass): symbol {
-  if (_hasOwnProperty.call(cls, INTERFACE_MARKER_PROPERTY)) {
-    return (cls as any)[INTERFACE_MARKER_PROPERTY]
-  }
+function interfaceDescriptorFactory<T> (...ps: readonly InterfaceDescriptor<any>[]): InterfaceDescriptor<T> {
   const marker = Symbol()
-  interfaceDefineHasInstanceMarker(cls, marker)
-  return marker
-}
+  const parents = ps.length > 0 ? Object.freeze(ps) : null
+  const descriptors = parents ? flattenDescriptors(parents) : null
 
-/**
- * Вызывает {@link interfaceDefineHasInstance()}, после чего замораживает прототип класса {@link cls} с помощью
- * `Object.freeze(cls.prototype)`.
- */
-function interfaceDefineHasInstanceAndFreeze (cls: TClass): symbol {
-  const marker = interfaceDefineHasInstance(cls)
-  Object.freeze(cls.prototype)
-  return marker
-}
-
-/**
- * Добавляет объекту, который должен реализовать интерфейсы, маркеры.
- *
- * Если объекту уже установлено свойство `marker(Symbol)`, функция пропускает маркер.
- *
- * **Warning:** Объект не должен быть заморожен.
- *
- * @param obj     Объект, который должен реализовать интерфейсы.
- * @param markers Уникальные маркеры интерфейсов.
- * @returns       Возвращает первый аргумент `obj`.
- *
- * @example
- * ```ts
- * class Foo {}
- * interfaceDefineHasInstance(Foo)
- * class Bar {}
- * interfaceDefineHasInstance(Bar)
- *
- * const obj = {}
- * interfaceDefineMarkers(obj, interfaceMarker(Foo), interfaceMarker(Bar))
- * ```
- */
-function interfaceDefineMarkers<T extends object> (obj: T, ...markers: symbol[]): T {
-  for (const marker of markers) {
-    if (!_hasOwnProperty.call(obj, marker)) {
-      Object.defineProperty(obj, marker, {
-        configurable: false,
-        enumerable: false,
-        writable: false,
-        value: INTERFACE_MARKER_ID
-      })
+  const implAny = (obj: object) => {
+    interfaceDefineDescriptor(obj, d)
+    if (descriptors) {
+      for (let i = 0; i < descriptors.length; ++i) {
+        interfaceDefineDescriptor(obj, descriptors[i]!)
+      }
     }
   }
-  return obj
-}
 
-/**
- * Добавляет объекту, который должен реализовать интерфейсы, маркеры всех интерфейсов.
- *
- * Если объекту уже установлено свойство `marker(Symbol)`, функция пропускает маркер.
- *
- * **Warning:** Объект не должен быть заморожен.
- *
- * @param obj        Объект, который должен реализовать интерфейсы.
- * @param interfaces Интерфейсы для реализации с ранее установленными маркерами.
- * @returns          Возвращает первый аргумент `obj`.
- * @throws Ошибка, если один из интерфейсов не имеет обязательного маркера.
- *
- * @example
- * ```ts
- * class Foo {}
- * interfaceDefineHasInstance(Foo)
- * class Bar {}
- * interfaceDefineHasInstance(Bar)
- *
- * const obj = {}
- * interfaceDefineInterfaces(obj, Foo, Bar)
- * ```
- */
-function interfaceDefineInterfaces<T extends object> (obj: T, ...interfaces: TClass[]): T {
-  for (const inter of interfaces) {
-    const marker = interfaceMarker(inter)
-    if (!marker) {
-      throw new Error('[ts-interface-core] Один из интерфейсов не имеет обязательного маркера.')
-    }
-    if (!_hasOwnProperty.call(obj, marker)) {
-      Object.defineProperty(obj, marker, {
-        configurable: false,
-        enumerable: false,
-        writable: false,
-        value: INTERFACE_MARKER_ID
-      })
+  const d: InterfaceDescriptor<T> = {
+    marker,
+    parents,
+    descriptors,
+    impl (cls: TClass) {
+      implAny(cls.prototype)
+    },
+    implAndFreeze (cls: TClass) {
+      const proto = cls.prototype
+      implAny(proto)
+      Object.freeze(cls.prototype)
+    },
+    implAny,
+    implAnyAndFreeze (obj: object) {
+      implAny(obj)
+      Object.freeze(obj)
+    },
+    is (ins: any): ins is T {
+      // Для сценария, когда у нас гарантировано объект - оптимистичный try/catch будет производительнее чем постоянная
+      // проверка typeof Смотри tryInVsTypeof.bench.ts. Оставил этот кусок для справки.
+      // return ((typeof ins === 'object') ? ins : (typeof ins === 'function')) ? (marker in ins) : false
+      try {
+        return (marker in ins)
+      } catch { }
+      return false
     }
   }
-  return obj
+
+  return Object.freeze(d)
 }
 
-/**
- * Добавляет прототипу класса, который должен реализовать интерфейсы, маркеры.
- *
- * Если прототипу уже установлено свойство `marker(Symbol)`, функция пропускает маркер.
- *
- * **Warning:** Объект не должен быть заморожен.
- *
- * @param cls     Класс который должен реализовать интерфейсы.
- * @param markers Уникальные маркеры интерфейсов.
- *
- * @example
- * ```ts
- * class Foo {}
- * interfaceDefineHasInstance(Foo)
- * class Bar {}
- * interfaceDefineHasInstance(Bar)
- *
- * class Some {}
- * interfaceImplementMarkers(Some, interfaceMarker(Foo), interfaceMarker(Bar))
- * ```
- */
-function interfaceImplementMarkers (cls: TClass, ...markers: symbol[]): void {
-  interfaceDefineMarkers(cls.prototype, ...markers)
-}
-
-/**
- * Устанавливает прототипу класса маркеры из интерфейсов, симулирующие реализации, и позволяющие использовать оператор
- * `instanceof` с экземплярами этих классов.
- *
- * **Note:** Смотри так же {@link interfaceExtends()}.
- *
- * **Warning:** Прототип не должен быть заморожен.
- *
- * @param cls        Класс который должен реализовать интерфейсы `interfaces`.
- * @param interfaces Интерфейсы для реализации с ранее установленными маркерами.
- * @throws Ошибка, если один из интерфейсов не имеет обязательного маркера.
- *
- * @example
- * ```ts
- * class Foo {}
- * interfaceDefineHasInstance(Foo)
- * class Bar {}
- * interfaceDefineHasInstance(Bar)
- *
- * class Impl implements Foo, Bar {}
- * interfaceImplements(Impl, Foo, Bar)
- * ```
- */
-function interfaceImplements (cls: TClass, ...interfaces: TClass[]): void {
-  for (const inter of interfaces) {
-    const marker = interfaceMarker(inter)
-    if (!marker) {
-      throw new Error('[ts-interface-core] Один из интерфейсов не имеет обязательного маркера.')
+// Расширяем функцию до нашего интерфейса
+const factoryDescriptors: PropertyDescriptorMap = {
+  libraryId: { value: LIBRARY_ID },
+  mark: {
+    value: interfaceMark
+  },
+  markAndFreeze: {
+    value: (cls: TClass, descriptors: Iterable<InterfaceDescriptor<any>>) => {
+      const proto = cls.prototype
+      interfaceMarkAny(proto, descriptors)
+      Object.freeze(proto)
+      return cls
     }
-    if (!_hasOwnProperty.call(cls.prototype, marker)) {
-      Object.defineProperty(cls.prototype, marker, {
-        configurable: false,
-        enumerable: false,
-        writable: false,
-        value: INTERFACE_MARKER_ID
-      })
+  },
+  markAny: {
+    value: interfaceMarkAny
+  },
+  markAnyAndFreeze: {
+    value: (obj: object, descriptors: Iterable<InterfaceDescriptor<any>>) => {
+      interfaceMarkAny(obj, descriptors)
+      return Object.freeze(obj)
     }
+  },
+  descriptorsOf: {
+    value: (cls: TClass) => interfaceDescriptorsOfAny(cls.prototype)
+  },
+  descriptorsOfAny: {
+    value: interfaceDescriptorsOfAny
   }
 }
 
-/**
- * Вызывает {@link interfaceImplements()}, после чего замораживает прототип класса {@link cls} с помощью
- * `Object.freeze(cls.prototype)`.
- */
-function interfaceImplementsAndFreeze (cls: TClass, ...interfaces: TClass[]): void {
-  interfaceImplements(cls, ...interfaces)
-  Object.freeze(cls.prototype)
-}
+Object.defineProperties(interfaceDescriptorFactory, factoryDescriptors)
+const interfaceDescriptor: InterfaceDescriptorFactory = Object.freeze(interfaceDescriptorFactory) as InterfaceDescriptorFactory
 
-/**
- * Последовательно вызывает {@link interfaceDefineHasInstance()} и {@link interfaceImplements()}.
- */
-function interfaceDefineHasInstanceAndImplements (cls: TClass, ...interfaces: TClass[]): symbol {
-  const marker = interfaceDefineHasInstance(cls)
-  interfaceImplements(cls, ...interfaces)
-  return marker
-}
-
-/**
- * Последовательно вызывает {@link interfaceDefineHasInstance()} и {@link interfaceImplements()}, после чего
- * замораживает прототип класса {@link cls} с помощью `Object.freeze(cls.prototype)`.
- */
-function interfaceDefineHasInstanceAndImplementsAndFreeze (cls: TClass, ...interfaces: TClass[]): symbol {
-  const marker = interfaceDefineHasInstance(cls)
-  interfaceImplements(cls, ...interfaces)
-  Object.freeze(cls.prototype)
-  return marker
-}
-
-/**
- * Устанавливает прототипу класса маркеры из интерфейсов, симулирующие реализации, и позволяющие использовать оператор
- * `instanceof` с экземплярами этих классов. Эту функцию рекомендуется использовать для расширения интерфейсов.
- *
- * **Warning:** Прототип не должен быть заморожен.
- *
- * **Note:** В отличие от {@link interfaceImplements()}, которая устанавливает маркеры из свойств класса-интерфейса,
- * эта функция получает все маркеры в цепочке прототипов каждого интерфейса. Используете этот метод для интерфейсов
- * расширенных от других интерфейсов.
- *
- * @param cls Класс который должен реализовать интерфейсы `interfaces`.
- * @param interfaces Интерфейсы и/или классы в цепочке которых есть маркеры интерфейсов. В отличие от
- *  {@link interfaceImplements()} эта функция не вызывает ошибок, если класс не содержит ни одного маркера.
- *
- * @example
- * ```ts
- * class Foo {}
- * interfaceDefineHasInstance(Foo)
- * class Bar extends Foo {}
- * interfaceDefineHasInstance(Bar)
- *
- * class Impl implements Foo, Bar {}
- * interfaceExtends(Impl, Bar)
- * ```
- */
-function interfaceExtends (cls: TClass, ...interfaces: TClass[]): void {
-  const markers: Set<symbol> = new Set()
-  for (const inter of interfaces) {
-    const marker = interfaceMarker(inter)
-    if (marker) {
-      markers.add(marker)
-    }
-    interfaceMarkersOfObjectInto(inter.prototype, markers)
-  }
-  for (const marker of markers) {
-    if (!_hasOwnProperty.call(cls.prototype, marker)) {
-      Object.defineProperty(cls.prototype, marker, {
-        configurable: false,
-        enumerable: false,
-        writable: false,
-        value: INTERFACE_MARKER_ID
-      })
-    }
-  }
-}
-
-/**
- * Вызывает {@link interfaceExtends()}, после чего замораживает прототип класса {@link cls} с помощью
- * `Object.freeze(cls.prototype)`.
- */
-function interfaceExtendsAndFreeze (cls: TClass, ...interfaces: TClass[]): void {
-  interfaceExtends(cls, ...interfaces)
-  Object.freeze(cls.prototype)
-}
-
-/**
- * Последовательно вызывает {@link interfaceDefineHasInstance()} и {@link interfaceExtends()}.
- */
-function interfaceDefineHasInstanceAndExtends (cls: TClass, ...interfaces: TClass[]): symbol {
-  const marker = interfaceDefineHasInstance(cls)
-  interfaceExtends(cls, ...interfaces)
-  return marker
-}
-
-/**
- * Последовательно вызывает {@link interfaceDefineHasInstance()} и {@link interfaceExtends()}, после чего замораживает
- * прототип класса {@link cls} с помощью `Object.freeze(cls.prototype)`.
- */
-function interfaceDefineHasInstanceAndExtendsAndFreeze (cls: TClass, ...interfaces: TClass[]): symbol {
-  const marker = interfaceDefineHasInstance(cls)
-  interfaceExtends(cls, ...interfaces)
-  Object.freeze(cls.prototype)
-  return marker
+namespace interfaceDescriptor {
+  export type I<T> = InterfaceDescriptor<T>
+  export type TClass = TClassConstructor | TClassPrivateConstructor
+  // NOTE Почему убран этот F? Самое частое использование типа - это I, а буква F выпадает первой в списке и все время
+  // заставляет делать лишнее телодвижение
+  // export type F = InterfaceDescriptorFactory
 }
 
 export {
+  LIBRARY_ID,
   type TClass,
-  INTERFACE_MARKER_ID,
-  INTERFACE_MARKER_PROPERTY,
-  interfaceHasInstance,
-  interfaceMarker,
-  interfaceMarkersOfObjectInto,
-  interfaceMarkersOfObject,
-  interfaceMarkersOfInstance,
-  interfaceMarkersOfClass,
-  interfaceDefineHasInstanceMarker,
-  interfaceDefineHasInstanceMarkerAndFreeze,
-  interfaceDefineHasInstance,
-  interfaceDefineHasInstanceAndFreeze,
-  interfaceDefineMarkers,
-  interfaceDefineInterfaces,
-  interfaceImplementMarkers,
-  interfaceImplements,
-  interfaceImplementsAndFreeze,
-  interfaceDefineHasInstanceAndImplements,
-  interfaceDefineHasInstanceAndImplementsAndFreeze,
-  interfaceExtends,
-  interfaceExtendsAndFreeze,
-  interfaceDefineHasInstanceAndExtends,
-  interfaceDefineHasInstanceAndExtendsAndFreeze
+  type InterfaceDescriptor,
+  type InterfaceDescriptorFactory,
+  interfaceDescriptor
 }

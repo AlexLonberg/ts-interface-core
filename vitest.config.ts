@@ -22,6 +22,7 @@ export default defineConfig({
     // Config https://vitest.dev/config/#benchmark
     benchmark: {
       include: [
+        'src/tryInVsTypeof.bench.ts',
         'src/fnVsFreeze.bench.ts',
         'src/instanceof.bench.ts',
         'src/hasOwn.bench.ts'

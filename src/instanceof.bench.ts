@@ -1,93 +1,29 @@
 import { bench } from 'vitest'
-import { interfaceDefineHasInstance, interfaceImplements } from './index.js'
-
-function defineHasInstance (set: WeakSet<Function>, cls: object) {
-  if (!Object.getOwnPropertyDescriptor(cls, Symbol.hasInstance)) {
-    Object.defineProperty(cls, Symbol.hasInstance, {
-      configurable: false,
-      enumerable: false,
-      writable: false,
-      value: (ins: unknown) => {
-        let proto = ins?.constructor
-        while (proto) {
-          if (set.has(proto)) return true
-          proto = Object.getPrototypeOf(proto)
-        }
-        return false
-      }
-    })
-  }
-}
+import { interfaceDescriptor } from './index.js'
+// import { interfaceDescriptor } from '../dist/index.js'
 
 // Native
-
 abstract class NativeFoo {
   abstract readonly name: string
 }
-
 abstract class NativeBar extends NativeFoo {
   abstract readonly key: number
 }
 
-// WeakSet
-
-const IFooSubclasses = new WeakSet()
-abstract class IFoo {
-  abstract readonly name: string
-
-  static _implement (cls: abstract new (..._: any[]) => unknown) {
-    IFooSubclasses.add(cls)
-  }
+// Descriptor
+interface IFoo {
+  readonly name: string
 }
-defineHasInstance(IFooSubclasses, IFoo)
-
-const IBarSubclasses = new WeakSet()
-abstract class IBar {
-  abstract readonly key: number
-
-  static _implement (cls: abstract new (..._: any[]) => unknown) {
-    IBarSubclasses.add(cls)
-  }
+const IFoo = interfaceDescriptor()
+interface IBar extends IFoo {
+  readonly key: number
 }
-defineHasInstance(IBarSubclasses, IBar)
-
-// Symbol
-
-abstract class IFooSymbol {
-  abstract readonly name: string
-
-  static _implement (cls: abstract new (..._: any[]) => unknown) {
-    interfaceImplements(cls, IFooSymbol)
-  }
-}
-interfaceDefineHasInstance(IFooSymbol)
-
-abstract class IBarSymbol {
-  abstract readonly key: number
-
-  static _implement (cls: abstract new (..._: any[]) => unknown) {
-    interfaceImplements(cls, IBarSymbol)
-  }
-}
-interfaceDefineHasInstance(IBarSymbol)
+const IBar = interfaceDescriptor(IFoo)
 
 // impl
 
-abstract class NativeClassBase extends NativeBar {
-  readonly name = 'NativeSomeBase'
-}
-
-abstract class IClassBase implements IFoo {
-  readonly name = 'IClassBase'
-}
-IFoo._implement(IClassBase)
-
-abstract class IClassSymbolBase implements IFooSymbol {
-  readonly name = 'IClassSymbolBase'
-}
-IFooSymbol._implement(IClassSymbolBase)
-
-class NativeClass extends NativeClassBase {
+class NativeClass extends NativeBar {
+  readonly name = 'name'
   readonly key: number
   constructor(key: number) {
     super()
@@ -95,62 +31,55 @@ class NativeClass extends NativeClassBase {
   }
 }
 
-class CustomClass extends IClassBase implements IBar {
+class DescriptorClass implements IBar {
+  readonly name = 'name'
   readonly key: number
   constructor(key: number) {
-    super()
     this.key = key
   }
 }
-IBar._implement(CustomClass)
+IBar.impl(DescriptorClass)
 
-class CustomClassSymbol extends IClassSymbolBase implements IBarSymbol {
-  readonly key: number
-  constructor(key: number) {
-    super()
-    this.key = key
-  }
-}
-IBarSymbol._implement(CustomClassSymbol)
+const COUNT = 100
 
-bench('native if ', () => {
-  for (let i = 0; i < 10; ++i) {
-    const ins = new NativeClass(123)
-    if (ins instanceof NativeFoo) { /**/ }
-    if (ins instanceof NativeBar) { /**/ }
-    if (ins instanceof NativeClassBase) { /**/ }
-    if (ins instanceof NativeClass) { /**/ }
-  }
+// Создаем массив с РАЗНЫМИ объектами, чтобы V8 не мог
+// предсказать структуру и кешировать один ответ
+const testObjects = Array.from({ length: COUNT }).map((_, i) => {
+  if (i % 3 === 0) return new DescriptorClass(i)
+  if (i % 3 === 1) return new NativeClass(i)
+  return { random: 'object' }
 })
 
-bench('custom if ', () => {
-  for (let i = 0; i < 10; ++i) {
-    const ins = new CustomClass(123)
-    if (ins instanceof IFoo) { /**/ }
-    if (ins instanceof IBar) { /**/ }
-    if (ins instanceof IClassBase) { /**/ }
-    if (ins instanceof CustomClass) { /**/ }
+bench('DescriptorClass', () => {
+  let matched = 0
+  for (let i = 0; i < testObjects.length; ++i) {
+    const ins = testObjects[i]
+    if (IFoo.is(ins)) { matched++ }
+    if (IBar.is(ins)) { matched++ }
+    if (ins instanceof DescriptorClass) { matched++ }
   }
+  return matched as unknown as void
 })
 
-bench('symbol if', () => {
-  for (let i = 0; i < 10; ++i) {
-    const ins = new CustomClassSymbol(123)
-    if (ins instanceof IFooSymbol) { /**/ }
-    if (ins instanceof IBarSymbol) { /**/ }
-    if (ins instanceof IClassSymbolBase) { /**/ }
-    if (ins instanceof CustomClassSymbol) { /**/ }
+bench('NativeClass', () => {
+  let matched = 0
+  for (let i = 0; i < testObjects.length; ++i) {
+    const ins = testObjects[i]
+    if (ins instanceof NativeFoo) { matched++ }
+    if (ins instanceof NativeBar) { matched++ }
+    if (ins instanceof NativeClass) { matched++ }
   }
+  return matched as unknown as void
 })
 
-//  ✓ src/instanceof.bench.ts 8131ms
-//      name                   hz     min     max    mean     p75     p99    p995    p999     rme  samples
-//    · native if   17,760,134.45  0.0000  0.2010  0.0001  0.0001  0.0002  0.0002  0.0004  ±0.24%  8880069
-//    · custom if   12,111,659.58  0.0000  0.4656  0.0001  0.0001  0.0002  0.0003  0.0004  ±0.28%  6055831
-//    · symbol if   16,497,972.00  0.0000  0.4827  0.0001  0.0001  0.0001  0.0002  0.0003  ±0.33%  8248986
+/*
+ ✓ src/instanceof.bench.ts 1599ms
+     name                       hz     min     max    mean     p75     p99    p995    p999     rme  samples
+   · DescriptorClass    370,356.74  0.0023  0.1605  0.0027  0.0027  0.0044  0.0048  0.0080  ±0.16%   185179
+   · NativeClass      2,092,587.07  0.0004  0.1196  0.0005  0.0005  0.0009  0.0010  0.0014  ±0.15%  1046295
 
-//  BENCH  Summary
+ BENCH  Summary
 
-//   native if  - src/instanceof.bench.ts
-//     1.08x faster than symbol if
-//     1.47x faster than custom if
+  NativeClass - src/instanceof.bench.ts
+    5.65x faster than DescriptorClass
+*/
